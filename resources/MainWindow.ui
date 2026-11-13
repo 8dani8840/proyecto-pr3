@@ -1,0 +1,475 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect><x>0</x><y>0</y><width>1100</width><height>720</height></rect>
+  </property>
+  <property name="windowTitle">
+   <string>Cold Case — La Mansión Blackwood</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">
+    QMainWindow { background-color: #0d0d0d; }
+    QWidget#centralwidget { background-color: #0d0d0d; }
+   </string>
+  </property>
+
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QHBoxLayout" name="layoutPrincipal">
+    <property name="spacing"><number>8</number></property>
+    <property name="leftMargin"><number>8</number></property>
+    <property name="topMargin"><number>8</number></property>
+    <property name="rightMargin"><number>8</number></property>
+    <property name="bottomMargin"><number>8</number></property>
+
+    <!-- ══════════════════════════════════════
+         COLUMNA IZQUIERDA: Narrativa (60%)
+    ══════════════════════════════════════ -->
+    <item>
+     <widget class="QFrame" name="framNarrativa">
+      <property name="styleSheet">
+       <string notr="true">
+        QFrame { background-color: #111111; border: 1px solid #3a1a1a; border-radius: 6px; }
+       </string>
+      </property>
+      <layout class="QVBoxLayout" name="layoutNarrativa">
+       <property name="spacing"><number>8</number></property>
+       <property name="leftMargin"><number>12</number></property>
+       <property name="topMargin"><number>12</number></property>
+       <property name="rightMargin"><number>12</number></property>
+       <property name="bottomMargin"><number>12</number></property>
+
+       <!-- Título de la escena -->
+       <item>
+        <widget class="QLabel" name="lblTituloEscena">
+         <property name="text"><string>COLD CASE — La Mansión Blackwood</string></property>
+         <property name="styleSheet">
+          <string notr="true">
+           QLabel {
+            color: #c8a04a;
+            font-size: 18px;
+            font-weight: bold;
+            font-family: 'Courier New';
+            border-bottom: 1px solid #3a1a1a;
+            padding-bottom: 6px;
+           }
+          </string>
+         </property>
+        </widget>
+       </item>
+
+       <!-- Texto narrativo principal -->
+       <item>
+        <widget class="QTextEdit" name="txtNarrativa">
+         <property name="readOnly"><bool>true</bool></property>
+         <property name="styleSheet">
+          <string notr="true">
+           QTextEdit {
+            background-color: #0a0a0a;
+            color: #d4c5a9;
+            font-size: 13px;
+            font-family: 'Courier New';
+            border: 1px solid #2a2a2a;
+            border-radius: 4px;
+            padding: 10px;
+           }
+          </string>
+         </property>
+        </widget>
+       </item>
+
+       <!-- Panel de alerta narrativa (Cola FIFO) -->
+       <item>
+        <widget class="QFrame" name="frameAlerta">
+         <property name="styleSheet">
+          <string notr="true">
+           QFrame {
+            background-color: #1a0e0e;
+            border: 1px solid #5a2020;
+            border-radius: 4px;
+           }
+          </string>
+         </property>
+         <layout class="QHBoxLayout">
+          <property name="leftMargin"><number>8</number></property>
+          <property name="topMargin"><number>6</number></property>
+          <property name="rightMargin"><number>8</number></property>
+          <property name="bottomMargin"><number>6</number></property>
+          <item>
+           <widget class="QLabel" name="lblIconoAlerta">
+            <property name="text"><string>🔎</string></property>
+            <property name="styleSheet">
+             <string notr="true">QLabel { font-size: 16px; color: #c8a04a; }</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="lblAlerta">
+            <property name="text"><string>Sofía Ramos abre el expediente...</string></property>
+            <property name="wordWrap"><bool>true</bool></property>
+            <property name="styleSheet">
+             <string notr="true">
+              QLabel { color: #e8d5a3; font-size: 12px; font-family: 'Courier New'; font-style: italic; }
+             </string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+
+       <!-- Separador -->
+       <item>
+        <widget class="QLabel" name="lblDecisionesHeader">
+         <property name="text"><string>¿Qué hace Sofía?</string></property>
+         <property name="styleSheet">
+          <string notr="true">
+           QLabel { color: #888; font-size: 11px; font-family: 'Courier New'; padding-top: 4px; }
+          </string>
+         </property>
+        </widget>
+       </item>
+
+       <!-- Contenedor de botones de decisión (se puebla dinámicamente) -->
+       <item>
+        <widget class="QWidget" name="widgetDecisiones">
+         <layout class="QVBoxLayout" name="layoutDecisiones">
+          <property name="spacing"><number>6</number></property>
+          <property name="leftMargin"><number>0</number></property>
+          <property name="topMargin"><number>0</number></property>
+          <property name="rightMargin"><number>0</number></property>
+          <property name="bottomMargin"><number>0</number></property>
+         </layout>
+        </widget>
+       </item>
+
+       <item><spacer><property name="orientation"><enum>Qt::Vertical</enum></property><property name="sizeHint" stdset="0"><size><width>20</width><height>40</height></size></property></spacer></item>
+
+       <!-- Barra de estado inferior -->
+       <item>
+        <widget class="QLabel" name="lblEstado">
+         <property name="text"><string>Pistas: 0  |  Objetos: 0  |  Escena: Entrada</string></property>
+         <property name="styleSheet">
+          <string notr="true">
+           QLabel { color: #555; font-size: 10px; font-family: 'Courier New'; border-top: 1px solid #222; padding-top: 4px; }
+          </string>
+         </property>
+        </widget>
+       </item>
+
+      </layout>
+     </widget>
+    </item>
+
+    <!-- ══════════════════════════════════════
+         COLUMNA DERECHA: Tabs (40%)
+    ══════════════════════════════════════ -->
+    <item>
+     <widget class="QTabWidget" name="tabWidget">
+      <property name="maximumWidth"><number>420</number></property>
+      <property name="styleSheet">
+       <string notr="true">
+        QTabWidget::pane {
+         background-color: #111111;
+         border: 1px solid #3a1a1a;
+         border-radius: 6px;
+        }
+        QTabBar::tab {
+         background-color: #1a1a1a;
+         color: #888;
+         font-family: 'Courier New';
+         font-size: 11px;
+         padding: 6px 14px;
+         border: 1px solid #2a2a2a;
+         border-bottom: none;
+        }
+        QTabBar::tab:selected {
+         background-color: #111111;
+         color: #c8a04a;
+         border-top: 2px solid #c8a04a;
+        }
+        QTabBar::tab:hover { color: #d4c5a9; }
+       </string>
+      </property>
+
+      <!-- ── TAB 1: INVENTARIO ── -->
+      <widget class="QWidget" name="tabInventario">
+       <attribute name="title"><string>🎒 Inventario</string></attribute>
+       <layout class="QVBoxLayout" name="layoutInventario">
+        <property name="spacing"><number>8</number></property>
+        <property name="leftMargin"><number>10</number></property>
+        <property name="topMargin"><number>10</number></property>
+        <property name="rightMargin"><number>10</number></property>
+        <property name="bottomMargin"><number>10</number></property>
+
+        <item>
+         <widget class="QLabel" name="lblInventarioHeader">
+          <property name="text"><string>INVENTARIO — Tabla Hash O(1)</string></property>
+          <property name="styleSheet">
+           <string notr="true">
+            QLabel { color: #c8a04a; font-size: 12px; font-weight: bold; font-family: 'Courier New'; }
+           </string>
+          </property>
+         </widget>
+        </item>
+
+        <item>
+         <widget class="QListWidget" name="listaInventario">
+          <property name="styleSheet">
+           <string notr="true">
+            QListWidget {
+             background-color: #0a0a0a;
+             color: #d4c5a9;
+             font-family: 'Courier New';
+             font-size: 12px;
+             border: 1px solid #2a2a2a;
+             border-radius: 4px;
+            }
+            QListWidget::item { padding: 6px 8px; border-bottom: 1px solid #1a1a1a; }
+            QListWidget::item:selected { background-color: #2a1a0a; color: #f0d890; }
+            QListWidget::item:hover { background-color: #1a1510; }
+           </string>
+          </property>
+         </widget>
+        </item>
+
+        <item>
+         <widget class="QTextEdit" name="txtDetalleObjeto">
+          <property name="readOnly"><bool>true</bool></property>
+          <property name="maximumHeight"><number>110</number></property>
+          <property name="placeholderText"><string>Selecciona un objeto para ver su descripción...</string></property>
+          <property name="styleSheet">
+           <string notr="true">
+            QTextEdit {
+             background-color: #0d0a07;
+             color: #bba87a;
+             font-family: 'Courier New';
+             font-size: 11px;
+             border: 1px solid #3a2a10;
+             border-radius: 4px;
+             padding: 6px;
+            }
+           </string>
+          </property>
+         </widget>
+        </item>
+
+       </layout>
+      </widget>
+
+      <!-- ── TAB 2: EXPEDIENTE (AVL) ── -->
+      <widget class="QWidget" name="tabExpediente">
+       <attribute name="title"><string>📁 Expediente</string></attribute>
+       <layout class="QVBoxLayout" name="layoutExpediente">
+        <property name="spacing"><number>8</number></property>
+        <property name="leftMargin"><number>10</number></property>
+        <property name="topMargin"><number>10</number></property>
+        <property name="rightMargin"><number>10</number></property>
+        <property name="bottomMargin"><number>10</number></property>
+
+        <item>
+         <widget class="QLabel" name="lblExpedienteHeader">
+          <property name="text"><string>EXPEDIENTE — Árbol AVL O(log n)</string></property>
+          <property name="styleSheet">
+           <string notr="true">
+            QLabel { color: #c8a04a; font-size: 12px; font-weight: bold; font-family: 'Courier New'; }
+           </string>
+          </property>
+         </widget>
+        </item>
+
+        <!-- Filtro por categoría -->
+        <item>
+         <widget class="QComboBox" name="comboCategoria">
+          <property name="styleSheet">
+           <string notr="true">
+            QComboBox {
+             background-color: #1a1a1a;
+             color: #d4c5a9;
+             font-family: 'Courier New';
+             font-size: 11px;
+             border: 1px solid #3a2a10;
+             border-radius: 4px;
+             padding: 4px 8px;
+            }
+            QComboBox::drop-down { border: none; }
+            QComboBox QAbstractItemView {
+             background-color: #1a1a1a;
+             color: #d4c5a9;
+             selection-background-color: #2a1a0a;
+            }
+           </string>
+          </property>
+          <item><property name="text"><string>-- Todas las categorías --</string></property></item>
+          <item><property name="text"><string>Fisica</string></property></item>
+          <item><property name="text"><string>Documental</string></property></item>
+          <item><property name="text"><string>Testimonial</string></property></item>
+          <item><property name="text"><string>Digital</string></property></item>
+         </widget>
+        </item>
+
+        <item>
+         <widget class="QListWidget" name="listaExpediente">
+          <property name="styleSheet">
+           <string notr="true">
+            QListWidget {
+             background-color: #0a0a0a;
+             color: #d4c5a9;
+             font-family: 'Courier New';
+             font-size: 12px;
+             border: 1px solid #2a2a2a;
+             border-radius: 4px;
+            }
+            QListWidget::item { padding: 6px 8px; border-bottom: 1px solid #1a1a1a; }
+            QListWidget::item:selected { background-color: #0a1a2a; color: #90b8d4; }
+            QListWidget::item:hover { background-color: #0d1218; }
+           </string>
+          </property>
+         </widget>
+        </item>
+
+        <item>
+         <widget class="QTextEdit" name="txtDetallePista">
+          <property name="readOnly"><bool>true</bool></property>
+          <property name="maximumHeight"><number>110</number></property>
+          <property name="placeholderText"><string>Selecciona una pista para ver el detalle...</string></property>
+          <property name="styleSheet">
+           <string notr="true">
+            QTextEdit {
+             background-color: #070a0d;
+             color: #8aabb8;
+             font-family: 'Courier New';
+             font-size: 11px;
+             border: 1px solid #102030;
+             border-radius: 4px;
+             padding: 6px;
+            }
+           </string>
+          </property>
+         </widget>
+        </item>
+
+       </layout>
+      </widget>
+
+      <!-- ── TAB 3: HISTORIAL (Pila) ── -->
+      <widget class="QWidget" name="tabHistorial">
+       <attribute name="title"><string>📋 Historial</string></attribute>
+       <layout class="QVBoxLayout" name="layoutHistorial">
+        <property name="spacing"><number>8</number></property>
+        <property name="leftMargin"><number>10</number></property>
+        <property name="topMargin"><number>10</number></property>
+        <property name="rightMargin"><number>10</number></property>
+        <property name="bottomMargin"><number>10</number></property>
+
+        <item>
+         <widget class="QLabel" name="lblHistorialHeader">
+          <property name="text"><string>HISTORIAL — Pila LIFO O(1)</string></property>
+          <property name="styleSheet">
+           <string notr="true">
+            QLabel { color: #c8a04a; font-size: 12px; font-weight: bold; font-family: 'Courier New'; }
+           </string>
+          </property>
+         </widget>
+        </item>
+
+        <item>
+         <widget class="QListWidget" name="listaHistorial">
+          <property name="styleSheet">
+           <string notr="true">
+            QListWidget {
+             background-color: #0a0a0a;
+             color: #d4c5a9;
+             font-family: 'Courier New';
+             font-size: 11px;
+             border: 1px solid #2a2a2a;
+             border-radius: 4px;
+            }
+            QListWidget::item { padding: 5px 8px; border-bottom: 1px solid #161616; }
+            QListWidget::item:selected { background-color: #0d0d20; color: #aaaaff; }
+           </string>
+          </property>
+         </widget>
+        </item>
+
+       </layout>
+      </widget>
+
+     </widget>
+    </item>
+
+   </layout>
+  </widget>
+
+  <!-- ══════════════════
+       MENU BAR
+  ══════════════════ -->
+  <widget class="QMenuBar" name="menuBar">
+   <property name="styleSheet">
+    <string notr="true">
+     QMenuBar {
+      background-color: #0d0d0d;
+      color: #888;
+      font-family: 'Courier New';
+      font-size: 11px;
+      border-bottom: 1px solid #2a2a2a;
+     }
+     QMenuBar::item:selected { background-color: #1a1a1a; color: #c8a04a; }
+     QMenu {
+      background-color: #111111;
+      color: #d4c5a9;
+      border: 1px solid #3a2a10;
+     }
+     QMenu::item:selected { background-color: #2a1a0a; color: #f0d890; }
+    </string>
+   </property>
+   <widget class="QMenu" name="menuJuego">
+    <property name="title"><string>Juego</string></property>
+    <addaction name="actionNuevoJuego"/>
+    <addaction name="separator"/>
+    <addaction name="actionSalir"/>
+   </widget>
+   <widget class="QMenu" name="menuAyuda">
+    <property name="title"><string>Ayuda</string></property>
+    <addaction name="actionAcercaDe"/>
+   </widget>
+   <addaction name="menuJuego"/>
+   <addaction name="menuAyuda"/>
+  </widget>
+
+  <!-- ══════════════════
+       STATUS BAR
+  ══════════════════ -->
+  <widget class="QStatusBar" name="statusBar">
+   <property name="styleSheet">
+    <string notr="true">
+     QStatusBar {
+      background-color: #0a0a0a;
+      color: #555;
+      font-family: 'Courier New';
+      font-size: 10px;
+      border-top: 1px solid #1a1a1a;
+     }
+    </string>
+   </property>
+  </widget>
+
+ </widget>
+
+ <!-- Acciones del menú -->
+ <action name="actionNuevoJuego">
+  <property name="text"><string>Nueva Investigación</string></property>
+  <property name="shortcut"><string>Ctrl+N</string></property>
+ </action>
+ <action name="actionSalir">
+  <property name="text"><string>Salir</string></property>
+  <property name="shortcut"><string>Ctrl+Q</string></property>
+ </action>
+ <action name="actionAcercaDe">
+  <property name="text"><string>Acerca de Cold Case</string></property>
+ </action>
+
+ <resources/>
+ <connections/>
+</ui>
