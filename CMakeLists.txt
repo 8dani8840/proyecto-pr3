@@ -110,11 +110,17 @@ if(GODOT_CPP_AVAILABLE)
     )
     target_include_directories(coldcase_gdext PRIVATE
         ${CMAKE_SOURCE_DIR}/include
-        ${GODOT_CPP_DIR}/include
-        ${GODOT_CPP_DIR}/gen/include
+        ${CMAKE_SOURCE_DIR}/src/gdextension
     )
-    target_link_libraries(coldcase_gdext PRIVATE godot-cpp Designar::Designar)
+    target_link_libraries(coldcase_gdext PRIVATE godot::cpp Designar::Designar)
     target_compile_definitions(coldcase_gdext PRIVATE USE_DESIGNAR=1)
+
+    set_target_properties(coldcase_gdext PROPERTIES
+        OUTPUT_NAME "libcoldcase"
+        PREFIX ""
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/godot_project/bin"
+        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/godot_project/bin"
+    )
 endif()
 
 # ============================================================
