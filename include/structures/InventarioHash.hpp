@@ -3,6 +3,8 @@
 
 #include <string>
 #include <vector>
+#include <chainedhash.hpp>
+#include <hash.hpp>
 
 // ============================================================
 // ObjetoInventario: representa un ítem recogible en el juego.
@@ -12,32 +14,43 @@ struct ObjetoInventario {
     std::string nombre;      // Nombre visible, ej: "Llave de Latón Antiguo"
     std::string descripcion; // Descripción narrativa
     bool usado;              // Si ya fue utilizado en una escena
+
+    ObjetoInventario()
+        : clave(""), nombre(""), descripcion(""), usado(false) {}
+
+    ObjetoInventario(const std::string& c, const std::string& n,
+                     const std::string& d, bool u = false)
+        : clave(c), nombre(n), descripcion(d), usado(u) {}
+
+    bool operator==(const ObjetoInventario& otro) const {
+        return clave == otro.clave;
+    }
 };
 
 // ============================================================
-// InventarioHash: Tabla Hash con encadenamiento (chaining).
-// Complejidad de inserción / búsqueda / eliminación: O(1) amortizado.
+// InventarioHash: Tabla Hash respaldada por DeSiGNAR::SeparateChainingHashTable.
 // ============================================================
 class InventarioHash {
-private:
-    static const int CAPACIDAD = 19; // Número primo para minimizar colisiones
-
-    struct Nodo {
-        ObjetoInventario objeto;
-        Nodo* siguiente;
-        explicit Nodo(const ObjetoInventario& obj) : objeto(obj), siguiente(nullptr) {}
+public:
+    struct CmpObjeto {
+        bool operator()(const ObjetoInventario& a, const ObjetoInventario& b) const {
+            return a.clave == b.clave;
+        }
     };
 
-    Nodo* tabla[CAPACIDAD];
-    int funcionHash(const std::string& clave) const; // djb2
+private:
+    static Designar::nat_t hashObjeto(const ObjetoInventario& obj) {
+        return Designar::super_fast_hash(obj.clave);
+    }
+
+    Designar::SeparateChainingHashTable<ObjetoInventario, CmpObjeto> tabla;
 
 public:
     InventarioHash();
-    ~InventarioHash();
+    ~InventarioHash() = default;
 
-    // No permitir copia accidental (gestión manual de memoria)
-    InventarioHash(const InventarioHash&) = delete;
-    InventarioHash& operator=(const InventarioHash&) = delete;
+    InventarioHash(const InventarioHash&) = default;
+    InventarioHash& operator=(const InventarioHash&) = default;
 
     void insertar(const std::string& clave, const std::string& nombre, const std::string& descripcion);
     ObjetoInventario* buscar(const std::string& clave);

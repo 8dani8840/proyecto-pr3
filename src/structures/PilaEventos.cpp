@@ -3,56 +3,68 @@
 #include <algorithm>
 
 // ============================================================
-// PilaEventos — Implementación
-// Pila LIFO respaldada por std::vector.
+// PilaEventos — Implementación con DeSiGNAR::DynStack
 // ============================================================
 
 void PilaEventos::push(const Evento& evento) {
     if (static_cast<int>(pila.size()) >= CAPACIDAD_MAX) {
-        // Eliminar el evento más antiguo (el fondo de la pila)
-        pila.erase(pila.begin());
+        // En caso de alcanzar CAPACIDAD_MAX, descartamos el más antiguo (fondo)
+        // Para preservar los elementos más recientes en orden LIFO:
+        std::vector<Evento> temp;
+        while (!pila.is_empty()) {
+            temp.push_back(pila.pop());
+        }
+        // temp[0] es el tope más reciente, temp.back() es el fondo (más antiguo)
+        temp.pop_back(); // descartar el fondo
+        for (int i = static_cast<int>(temp.size()) - 1; i >= 0; --i) {
+            pila.push(temp[i]);
+        }
     }
-    pila.push_back(evento);
+    pila.push(evento);
 }
 
 Evento PilaEventos::pop() {
     if (estaVacia()) {
         throw std::underflow_error("PilaEventos: intento de pop() en pila vacia.");
     }
-    Evento tope = pila.back();
-    pila.pop_back();
-    return tope;
+    return pila.pop();
 }
 
 const Evento& PilaEventos::peek() const {
     if (estaVacia()) {
         throw std::underflow_error("PilaEventos: intento de peek() en pila vacia.");
     }
-    return pila.back();
+    return pila.top();
 }
 
 std::vector<Evento> PilaEventos::obtenerUltimos(int n) const {
-    std::vector<Evento> resultado;
-    int inicio = std::max(0, static_cast<int>(pila.size()) - n);
-    for (int i = static_cast<int>(pila.size()) - 1; i >= inicio; --i) {
-        resultado.push_back(pila[i]);
+    std::vector<Evento> todos = obtenerTodos();
+    if (n >= static_cast<int>(todos.size())) {
+        return todos;
     }
-    return resultado;
+    return std::vector<Evento>(todos.begin(), todos.begin() + n);
 }
 
 std::vector<Evento> PilaEventos::obtenerTodos() const {
-    std::vector<Evento> resultado(pila.rbegin(), pila.rend());
+    // Para no vaciar la pila original, hacemos una copia temporal
+    Designar::DynStack<Evento> copia = pila;
+    std::vector<Evento> resultado;
+    resultado.reserve(copia.size());
+    while (!copia.is_empty()) {
+        resultado.push_back(copia.pop());
+    }
     return resultado;
 }
 
 void PilaEventos::mostrarHistorial() const {
-    std::cout << "\n=== HISTORIAL DE ACCIONES (Pila LIFO) ===\n";
+    std::cout << "\n=== HISTORIAL DE ACCIONES (Pila LIFO — DeSiGNAR) ===\n";
     if (estaVacia()) {
         std::cout << "  (Sin acciones registradas)\n";
         return;
     }
-    for (int i = static_cast<int>(pila.size()) - 1; i >= 0; --i) {
-        std::cout << "  [" << tipoEventoAString(pila[i].tipo) << "] "
-                  << pila[i].descripcion << "\n";
+    std::vector<Evento> todos = obtenerTodos();
+    for (const auto& ev : todos) {
+        std::cout << "  [" << tipoEventoAString(ev.tipo) << "] "
+                  << ev.descripcion << "\n";
     }
 }
