@@ -1,4 +1,4 @@
-﻿[configuration]
+[configuration]
 entry_symbol = "coldcase_library_init"
 compatibility_minimum = "4.1"
 

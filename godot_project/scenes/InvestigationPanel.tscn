@@ -1,4 +1,4 @@
-﻿[gd_scene load_steps=4 format=3 uid="uid://investigation_panel"]
+[gd_scene load_steps=4 format=3 uid="uid://investigation_panel"]
 
 [node name="InvestigationPanel" type="Control"]
 layout_mode = 3
