@@ -3,69 +3,40 @@
 
 #include "game/Pista.hpp"
 #include <vector>
-#include <functional>
 #include <string>
+#include <avltree.hpp>
 
 // ============================================================
 // ArbolAVL: Árbol Binario de Búsqueda autobalanceado (AVL).
-// Almacena las Pistas descubiertas por la investigadora.
-// Complejidad de inserción / búsqueda / eliminación: O(log n).
+// Respaldado internamente por DeSiGNAR::AVLTree.
 // ============================================================
 class ArbolAVL {
-private:
-    // ---- Nodo interno del árbol ----
-    struct NodoAVL {
-        Pista pista;
-        NodoAVL* izquierdo;
-        NodoAVL* derecho;
-        int altura;
-
-        explicit NodoAVL(const Pista& p)
-            : pista(p), izquierdo(nullptr), derecho(nullptr), altura(1) {}
+public:
+    struct CmpPista {
+        bool operator()(const Pista& a, const Pista& b) const {
+            return a.id < b.id;
+        }
     };
 
-    NodoAVL* raiz;
-    int totalPistas;
-
-    // ---- Métodos privados de balanceo ----
-    int altura(NodoAVL* nodo) const;
-    int factorBalance(NodoAVL* nodo) const;
-    void actualizarAltura(NodoAVL* nodo);
-
-    NodoAVL* rotarDerecha(NodoAVL* y);
-    NodoAVL* rotarIzquierda(NodoAVL* x);
-    NodoAVL* balancear(NodoAVL* nodo);
-
-    NodoAVL* insertar(NodoAVL* nodo, const Pista& pista);
-    NodoAVL* eliminar(NodoAVL* nodo, int id);
-    NodoAVL* buscar(NodoAVL* nodo, int id) const;
-    NodoAVL* minimoNodo(NodoAVL* nodo) const;
-
-    // Recorridos
-    void inorden(NodoAVL* nodo, std::vector<Pista>& resultado) const;
-    void buscarPorCategoria(NodoAVL* nodo, const std::string& categoria, std::vector<Pista>& resultado) const;
-    void destruir(NodoAVL* nodo);
+private:
+    Designar::AVLTree<Pista, CmpPista> arbol;
 
 public:
-    ArbolAVL();
-    ~ArbolAVL();
+    ArbolAVL() = default;
+    ~ArbolAVL() = default;
 
-    // No permitir copia accidental
-    ArbolAVL(const ArbolAVL&) = delete;
-    ArbolAVL& operator=(const ArbolAVL&) = delete;
+    ArbolAVL(const ArbolAVL&) = default;
+    ArbolAVL& operator=(const ArbolAVL&) = default;
 
     void insertar(const Pista& pista);
     bool eliminar(int id);
     Pista* buscar(int id);
 
-    // Recorrido ordenado (inorden = IDs ascendentes)
     std::vector<Pista> obtenerOrdenado() const;
-
-    // Búsqueda por categoría
     std::vector<Pista> filtrarPorCategoria(const std::string& categoria) const;
 
-    int getTotalPistas() const { return totalPistas; }
-    bool estaVacio() const { return raiz == nullptr; }
+    int getTotalPistas() const { return static_cast<int>(arbol.size()); }
+    bool estaVacio() const { return arbol.is_empty(); }
 
     void mostrarExpediente() const;
 };

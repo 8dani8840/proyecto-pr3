@@ -1,11 +1,11 @@
-#ifndef GAME_ENGINE_HPP
+﻿#ifndef GAME_ENGINE_HPP
 #define GAME_ENGINE_HPP
 
 #include "structures/InventarioHash.hpp"
 #include "structures/ArbolAVL.hpp"
 #include "structures/PilaEventos.hpp"
 #include "structures/ColaAlertas.hpp"
-#include "structures/GrafoNarrativo.hpp"
+#include "structures/GestorEscenas.hpp"
 #include "game/Pista.hpp"
 #include "game/Evento.hpp"
 #include <string>
@@ -22,7 +22,7 @@ private:
     ArbolAVL expediente;
     PilaEventos historial;
     ColaAlertas alertas;
-    GrafoNarrativo narrativa;
+    GestorEscenas narrativa;
 
     int proximoIdPista;
     std::string nombreJugadora;
@@ -32,7 +32,7 @@ private:
     void inicializarNarrativa();
     void inicializarInventarioInicial();
 
-    // Helper: obtener claves del inventario para el grafo
+    // Helper: obtener claves del inventario para validar condiciones de escenas
     std::vector<std::string> obtenerClavesInventario() const;
 
     // Helper: registrar acción y agregar alerta

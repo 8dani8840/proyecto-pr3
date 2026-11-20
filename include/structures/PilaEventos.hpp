@@ -4,21 +4,23 @@
 #include "game/Evento.hpp"
 #include <vector>
 #include <stdexcept>
+#include <stack.hpp>
 
 // ============================================================
 // PilaEventos: Pila LIFO (Last-In, First-Out).
-// Registra el historial de acciones de la investigadora.
-// El último evento registrado es el primero en consultarse.
-// Complejidad: O(1) para push, pop y peek.
+// Respaldada internamente por DeSiGNAR::DynStack<Evento>.
 // ============================================================
 class PilaEventos {
 private:
     static const int CAPACIDAD_MAX = 100; // Límite de historial visible
-    std::vector<Evento> pila;
+    Designar::DynStack<Evento> pila;
 
 public:
     PilaEventos() = default;
     ~PilaEventos() = default;
+
+    PilaEventos(const PilaEventos&) = default;
+    PilaEventos& operator=(const PilaEventos&) = default;
 
     // Agrega un evento al tope de la pila
     void push(const Evento& evento);
@@ -29,7 +31,7 @@ public:
     // Consulta el evento del tope sin eliminarlo
     const Evento& peek() const;
 
-    bool estaVacia() const { return pila.empty(); }
+    bool estaVacia() const { return pila.is_empty(); }
     int tamano() const { return static_cast<int>(pila.size()); }
 
     // Retorna los últimos N eventos (para mostrar historial en la UI)
