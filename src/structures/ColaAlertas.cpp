@@ -2,25 +2,22 @@
 #include <iostream>
 
 // ============================================================
-// ColaAlertas — Implementación
-// Cola FIFO respaldada por std::deque.
+// ColaAlertas — Implementación con DeSiGNAR::DynQueue
 // ============================================================
 
 void ColaAlertas::enqueue(const Evento& evento) {
     if (static_cast<int>(cola.size()) >= CAPACIDAD_MAX) {
-        // Si la cola está llena, descartar la alerta más antigua
-        cola.pop_front();
+        // Descartar la más antigua (frente)
+        cola.get();
     }
-    cola.push_back(evento);
+    cola.put(evento);
 }
 
 Evento ColaAlertas::dequeue() {
     if (estaVacia()) {
         throw std::underflow_error("ColaAlertas: intento de dequeue() en cola vacia.");
     }
-    Evento frente = cola.front();
-    cola.pop_front();
-    return frente;
+    return cola.get();
 }
 
 const Evento& ColaAlertas::frente() const {
@@ -31,16 +28,23 @@ const Evento& ColaAlertas::frente() const {
 }
 
 std::vector<Evento> ColaAlertas::obtenerPendientes() const {
-    return std::vector<Evento>(cola.begin(), cola.end());
+    Designar::DynQueue<Evento> copia = cola;
+    std::vector<Evento> resultado;
+    resultado.reserve(copia.size());
+    while (!copia.is_empty()) {
+        resultado.push_back(copia.get());
+    }
+    return resultado;
 }
 
 void ColaAlertas::mostrarAlertas() const {
-    std::cout << "\n=== ALERTAS PENDIENTES (Cola FIFO) ===\n";
+    std::cout << "\n=== ALERTAS PENDIENTES (Cola FIFO — DeSiGNAR) ===\n";
     if (estaVacia()) {
         std::cout << "  (Sin alertas pendientes)\n";
         return;
     }
-    for (const auto& e : cola) {
+    std::vector<Evento> pendientes = obtenerPendientes();
+    for (const auto& e : pendientes) {
         std::cout << "  [" << tipoEventoAString(e.tipo) << "] "
                   << e.descripcion << "\n";
     }
