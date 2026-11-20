@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+﻿cmake_minimum_required(VERSION 3.16)
 project(ColdCase VERSION 1.0 LANGUAGES CXX)
 
 # ============================================================
@@ -105,6 +105,52 @@ if(BUILD_TESTS)
 endif()
 
 # ============================================================
+#  DeSiGNAR — librería de estructuras de datos
+# ============================================================
+set(DESIGNAR_DIR ${CMAKE_SOURCE_DIR}/third_party/DeSiGNAR)
+if(EXISTS ${DESIGNAR_DIR}/CMakeLists.txt)
+    add_subdirectory(${DESIGNAR_DIR})
+    set(DESIGNAR_AVAILABLE TRUE)
+else()
+    message(WARNING "DeSiGNAR no encontrado en third_party/. Usando implementaciones propias.")
+    set(DESIGNAR_AVAILABLE FALSE)
+endif()
+
+# ============================================================
+#  godot-cpp — bindings de Godot para C++
+# ============================================================
+set(GODOT_CPP_DIR ${CMAKE_SOURCE_DIR}/third_party/godot-cpp)
+if(EXISTS ${GODOT_CPP_DIR}/CMakeLists.txt)
+    set(GODOT_CPP_AVAILABLE TRUE)
+    add_subdirectory(${GODOT_CPP_DIR})
+else()
+    message(WARNING "godot-cpp no encontrado. Las escenas Godot no estarán disponibles.")
+    set(GODOT_CPP_AVAILABLE FALSE)
+endif()
+
+# ============================================================
+#  Target GDExtension (libcoldcase.dll / libcoldcase.so)
+# ============================================================
+if(GODOT_CPP_AVAILABLE)
+    add_library(coldcase_gdext SHARED
+        src/gdextension/ColdCaseExtension.cpp
+        src/gdextension/GameBridge.cpp
+        ${SOURCES_ESTRUCTURAS}
+        ${SOURCES_GAME}
+    )
+    target_include_directories(coldcase_gdext PRIVATE
+        ${CMAKE_SOURCE_DIR}/include
+        ${GODOT_CPP_DIR}/include
+        ${GODOT_CPP_DIR}/gen/include
+    )
+    target_link_libraries(coldcase_gdext PRIVATE godot-cpp)
+    if(DESIGNAR_AVAILABLE)
+        target_link_libraries(coldcase_gdext PRIVATE DeSiGNAR)
+        target_compile_definitions(coldcase_gdext PRIVATE USE_DESIGNAR=1)
+    endif()
+endif()
+
+# ============================================================
 #  Resumen al configurar
 # ============================================================
 message(STATUS "")
@@ -114,4 +160,6 @@ message(STATUS "  Estandar    : C++${CMAKE_CXX_STANDARD}")
 message(STATUS "  Build type  : ${CMAKE_BUILD_TYPE}")
 message(STATUS "  GUI Qt6     : ${BUILD_GUI}")
 message(STATUS "  Tests       : ${BUILD_TESTS}")
+message(STATUS "  DeSiGNAR    : ${DESIGNAR_AVAILABLE}")
+message(STATUS "  godot-cpp   : ${GODOT_CPP_AVAILABLE}")
 message(STATUS "")
