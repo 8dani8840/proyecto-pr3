@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.20)
 project(ColdCase VERSION 1.0 LANGUAGES CXX)
 
 # ============================================================
@@ -9,15 +9,46 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 # ============================================================
-#  Opciones de compilación
+#  Enlazado estático en Windows (MinGW) para portabilidad
 # ============================================================
-option(BUILD_GUI  "Compilar versión Qt6 con interfaz gráfica" ON)
-option(BUILD_TESTS "Compilar ejecutables de prueba"           ON)
+if(WIN32 AND MINGW)
+    add_link_options(-static-libgcc -static-libstdc++)
+endif()
 
 # ============================================================
-#  Directorios de headers compartidos
+#  Opciones de compilación
 # ============================================================
-include_directories(${CMAKE_SOURCE_DIR}/include)
+option(BUILD_GUI   "Compilar versión Qt6 (legado)"         OFF)
+option(BUILD_TESTS "Compilar ejecutables de prueba"        ON)
+option(BUILD_GODOT "Compilar librería GDExtension Godot"   ON)
+
+# ============================================================
+#  1. DeSiGNAR — librería de estructuras de datos
+# ============================================================
+set(DESIGNAR_DIR ${CMAKE_SOURCE_DIR}/third_party/DeSiGNAR)
+if(EXISTS ${DESIGNAR_DIR}/CMakeLists.txt)
+    # Apagamos los samples y tests internos de DeSiGNAR para compilar rápido
+    set(DESIGNAR_BUILD_SAMPLES OFF CACHE BOOL "" FORCE)
+    set(DESIGNAR_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+    add_subdirectory(${DESIGNAR_DIR})
+    set(DESIGNAR_AVAILABLE TRUE)
+else()
+    message(FATAL_ERROR "DeSiGNAR no encontrado en third_party/DeSiGNAR. Ejecuta: git submodule update --init")
+endif()
+
+# ============================================================
+#  2. godot-cpp — bindings de Godot para C++
+# ============================================================
+set(GODOT_CPP_DIR ${CMAKE_SOURCE_DIR}/third_party/godot-cpp)
+if(BUILD_GODOT AND EXISTS ${GODOT_CPP_DIR}/CMakeLists.txt)
+    set(GODOT_CPP_AVAILABLE TRUE)
+    add_subdirectory(${GODOT_CPP_DIR})
+else()
+    if(BUILD_GODOT)
+        message(WARNING "godot-cpp no encontrado en third_party/godot-cpp. Se omitirá coldcase_gdext.")
+    endif()
+    set(GODOT_CPP_AVAILABLE FALSE)
+endif()
 
 # ============================================================
 #  Fuentes compartidas (estructuras + motor)
@@ -35,7 +66,7 @@ set(SOURCES_GAME
 )
 
 # ============================================================
-#  Target 1: cold_case_consola — Modo consola (sin Qt)
+#  Target 1: cold_case_consola — Modo consola (con DeSiGNAR)
 # ============================================================
 add_executable(cold_case_consola
     src/game/main.cpp
@@ -43,17 +74,55 @@ add_executable(cold_case_consola
     ${SOURCES_GAME}
 )
 target_include_directories(cold_case_consola PRIVATE ${CMAKE_SOURCE_DIR}/include)
+target_link_libraries(cold_case_consola PRIVATE Designar::Designar)
+target_compile_definitions(cold_case_consola PRIVATE USE_DESIGNAR=1)
 
 # ============================================================
-#  Target 2: cold_case — GUI con Qt6 (si BUILD_GUI=ON)
+#  Función auxiliar para registrar tests (con DeSiGNAR)
+# ============================================================
+function(add_test_target name source)
+    add_executable(${name}
+        ${source}
+        ${SOURCES_ESTRUCTURAS}
+        ${SOURCES_GAME}
+    )
+    target_include_directories(${name} PRIVATE ${CMAKE_SOURCE_DIR}/include)
+    target_link_libraries(${name} PRIVATE Designar::Designar)
+    target_compile_definitions(${name} PRIVATE USE_DESIGNAR=1)
+endfunction()
+
+if(BUILD_TESTS)
+    add_test_target(test_inventario  tests/test_inventario.cpp)
+    add_test_target(test_avl         tests/test_avl.cpp)
+    add_test_target(test_pila_cola   tests/test_pila_cola.cpp)
+    add_test_target(test_grafo       tests/test_grafo.cpp)
+endif()
+
+# ============================================================
+#  Target 2: GDExtension (libcoldcase.dll / libcoldcase.so)
+# ============================================================
+if(GODOT_CPP_AVAILABLE)
+    add_library(coldcase_gdext SHARED
+        src/gdextension/ColdCaseExtension.cpp
+        src/gdextension/GameBridge.cpp
+        ${SOURCES_ESTRUCTURAS}
+        ${SOURCES_GAME}
+    )
+    target_include_directories(coldcase_gdext PRIVATE
+        ${CMAKE_SOURCE_DIR}/include
+        ${GODOT_CPP_DIR}/include
+        ${GODOT_CPP_DIR}/gen/include
+    )
+    target_link_libraries(coldcase_gdext PRIVATE godot-cpp Designar::Designar)
+    target_compile_definitions(coldcase_gdext PRIVATE USE_DESIGNAR=1)
+endif()
+
+# ============================================================
+#  Target 3: cold_case — GUI con Qt6 (Opcional / Legado)
 # ============================================================
 if(BUILD_GUI)
-    # Buscar Qt6 (requiere Qt instalado)
     find_package(Qt6 REQUIRED COMPONENTS Core Widgets)
-    if(NOT Qt6_FOUND)
-        message(WARNING "Qt6 no encontrado. Desactiva BUILD_GUI con -DBUILD_GUI=OFF para omitir la GUI.")
-    else()
-        # Habilitar MOC automático (procesa Q_OBJECT) y UIC (procesa .ui)
+    if(Qt6_FOUND)
         set(CMAKE_AUTOMOC ON)
         set(CMAKE_AUTOUIC ON)
         set(CMAKE_AUTOUIC_SEARCH_PATHS ${CMAKE_SOURCE_DIR}/resources)
@@ -64,44 +133,16 @@ if(BUILD_GUI)
             ${SOURCES_ESTRUCTURAS}
             ${SOURCES_GAME}
         )
-
         target_include_directories(cold_case PRIVATE
             ${CMAKE_SOURCE_DIR}/include
-            ${CMAKE_SOURCE_DIR}/resources   # Para que uic encuentre el .ui
-            ${CMAKE_CURRENT_BINARY_DIR}      # Para ui_MainWindow.h generado
+            ${CMAKE_SOURCE_DIR}/resources
+            ${CMAKE_CURRENT_BINARY_DIR}
         )
-
-        target_link_libraries(cold_case PRIVATE Qt6::Core Qt6::Widgets)
-
-        # En Windows: ocultar la consola negra del CMD detrás de la ventana Qt
+        target_link_libraries(cold_case PRIVATE Qt6::Core Qt6::Widgets Designar::Designar)
         if(WIN32)
             set_target_properties(cold_case PROPERTIES WIN32_EXECUTABLE TRUE)
         endif()
-
-        message(STATUS "Target 'cold_case' (Qt6 GUI) configurado correctamente.")
     endif()
-endif()
-
-# ============================================================
-#  Función auxiliar para registrar tests (sin Qt)
-# ============================================================
-function(add_test_target name source)
-    add_executable(${name}
-        ${source}
-        ${SOURCES_ESTRUCTURAS}
-        ${SOURCES_GAME}
-    )
-    target_include_directories(${name} PRIVATE ${CMAKE_SOURCE_DIR}/include)
-endfunction()
-
-# ============================================================
-#  Targets de prueba
-# ============================================================
-if(BUILD_TESTS)
-    add_test_target(test_inventario  tests/test_inventario.cpp)
-    add_test_target(test_avl         tests/test_avl.cpp)
-    add_test_target(test_pila_cola   tests/test_pila_cola.cpp)
-    add_test_target(test_grafo       tests/test_grafo.cpp)
 endif()
 
 # ============================================================
@@ -111,7 +152,8 @@ message(STATUS "")
 message(STATUS "=== Cold Case — Configuracion CMake ===")
 message(STATUS "  Compilador  : ${CMAKE_CXX_COMPILER_ID}")
 message(STATUS "  Estandar    : C++${CMAKE_CXX_STANDARD}")
-message(STATUS "  Build type  : ${CMAKE_BUILD_TYPE}")
-message(STATUS "  GUI Qt6     : ${BUILD_GUI}")
+message(STATUS "  DeSiGNAR    : ${DESIGNAR_AVAILABLE}")
+message(STATUS "  godot-cpp   : ${GODOT_CPP_AVAILABLE}")
 message(STATUS "  Tests       : ${BUILD_TESTS}")
+message(STATUS "  GUI Qt6     : ${BUILD_GUI}")
 message(STATUS "")

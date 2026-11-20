@@ -3,8 +3,7 @@
 
 #include <string>
 #include <vector>
-#include <unordered_map>
-#include <functional>
+#include <graph.hpp>
 
 // ============================================================
 // NodoNarrativo: representa un estado/escena de la historia.
@@ -34,20 +33,26 @@ struct AristaDecision {
     std::string textoDecision;    // Texto del botón de elección
     std::string condicion;        // Clave de objeto/pista requerida (vacío = libre)
 
+    AristaDecision() : idDestino(-1), textoDecision(""), condicion("") {}
     AristaDecision(int dest, const std::string& texto, const std::string& cond = "")
         : idDestino(dest), textoDecision(texto), condicion(cond) {}
 };
 
 // ============================================================
 // GrafoNarrativo: Grafo dirigido de la narrativa ramificada.
-// Implementa DFS para explorar caminos y backtracking para
-// encontrar rutas alternativas hacia los finales.
+// Respaldado internamente por DeSiGNAR::Digraph<NodoNarrativo, AristaDecision>.
 // ============================================================
 class GrafoNarrativo {
+public:
+    using DigrafoType = Designar::Digraph<NodoNarrativo, AristaDecision>;
+    using DNode = DigrafoType::Node;
+    using DArc = DigrafoType::Arc;
+
 private:
-    std::unordered_map<int, NodoNarrativo> nodos;
-    std::unordered_map<int, std::vector<AristaDecision>> adyacencia;
+    DigrafoType grafo;
     int nodoActual;
+
+    DNode* buscarDNode(int id) const;
 
     // DFS con backtracking para encontrar caminos hacia finales
     bool dfsBacktracking(int actual, int destino,
@@ -58,6 +63,11 @@ private:
 public:
     GrafoNarrativo();
     ~GrafoNarrativo() = default;
+
+    GrafoNarrativo(const GrafoNarrativo& otro);
+    GrafoNarrativo& operator=(const GrafoNarrativo& otro);
+    GrafoNarrativo(GrafoNarrativo&&) noexcept = default;
+    GrafoNarrativo& operator=(GrafoNarrativo&&) noexcept = default;
 
     // Construcción del grafo
     void agregarNodo(const NodoNarrativo& nodo);

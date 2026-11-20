@@ -1,0 +1,3 @@
+[submodule "third_party/DeSiGNAR"]
+	path = third_party/DeSiGNAR
+	url = https://github.com/R3mmurd/DeSiGNAR
