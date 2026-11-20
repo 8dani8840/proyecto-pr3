@@ -1,4 +1,4 @@
-﻿[gd_scene load_steps=3 format=3 uid="uid://clue_panel"]
+[gd_scene load_steps=3 format=3 uid="uid://clue_panel"]
 
 [node name="CluePanel" type="Control"]
 layout_mode = 3

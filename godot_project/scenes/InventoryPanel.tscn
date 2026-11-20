@@ -1,4 +1,4 @@
-﻿[gd_scene load_steps=3 format=3 uid="uid://inventory_panel"]
+[gd_scene load_steps=3 format=3 uid="uid://inventory_panel"]
 
 [node name="InventoryPanel" type="Control"]
 layout_mode = 3
