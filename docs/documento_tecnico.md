@@ -1,236 +1,99 @@
-﻿# Documento Técnico — Cold Case: La Mansión Blackwood
+﻿# Documento Técnico — Cold Case
 
-**Equipo:** Enigma Byte Studio | Programación 3  
-**Versión:** 1.1.0  
-**Fecha:** Noviembre 2026  
-
----
-
-## 1. Arquitectura del Sistema
-
-El proyecto adopta una arquitectura en capas donde la **lógica del juego** (C++17) está completamente desacoplada de la **capa visual** (Godot 4). La comunicación se realiza exclusivamente a través del puente GDExtension (`GameBridge`).
-
-```mermaid
-flowchart TD
-    subgraph Godot["🎮 Godot 4 — Capa Visual"]
-        UI["UI Nodes\n(Control / CanvasLayer)"]
-        TSCN["Escenas .tscn\n(2D sprites, paneles)"]
-        AUDIO["AudioStreamPlayer\nAnimationPlayer"]
-    end
-
-    subgraph Bridge["🔗 GDExtension Bridge"]
-        GB["GameBridge\n(extends Node)"]
-    end
-
-    subgraph Engine["⚙️ C++17 — Motor Lógico"]
-        GE["GameEngine\n(orquestador)"]
-        subgraph Structures["Estructuras DeSiGNAR"]
-            INV["DS::HashMap\n(InventarioHash)"]
-            AVL["DS::AVLTree\n(ArbolAVL)"]
-            PILA["DS::Stack\n(PilaEventos)"]
-            COLA["DS::Queue\n(ColaAlertas)"]
-            GRAFO["DS::Graph\n(GrafoNarrativo)"]
-        end
-    end
-
-    subgraph DeSiGNAR["📦 DeSiGNAR Library"]
-        DS["DS:: Templates\n(third_party/DeSiGNAR)"]
-    end
-
-    UI -->|"señales GDScript"| GB
-    TSCN --> UI
-    AUDIO --> UI
-    GB -->|"C++ calls"| GE
-    GE --> INV
-    GE --> AVL
-    GE --> PILA
-    GE --> COLA
-    GE --> GRAFO
-    INV --> DS
-    AVL --> DS
-    PILA --> DS
-    COLA --> DS
-    GRAFO --> DS
-```
-
-### Capas y responsabilidades
-
-| Capa | Tecnología | Responsabilidad |
-|------|-----------|-----------------|
-| **Visual** | Godot 4.x | Renderizado 2D, UI, animaciones, audio |
-| **Bridge** | GDExtension (godot-cpp) | Traducción de tipos Godot ↔ C++ |
-| **Lógica** | C++17 (`GameEngine`) | Reglas del juego, narrativa, estado |
-| **Datos** | DeSiGNAR (`DS::*`) | Estructuras de datos eficientes |
-| **Build** | CMake 3.16+ | Compilación multiplataforma |
+**Equipo:** Enigma Byte Studio  
+**Asignatura:** Programación 3 — Escuela de Ingeniería de Sistemas (ULA)  
+**Lenguaje y Estándar:** C++17  
+**Motor Gráfico:** Godot Engine 4 (vía GDExtension / `godot-cpp`, sin lógica en GDScript)  
+**Librería de Estructuras de Datos:** `DeSiGNAR` (`third_party/DeSiGNAR`)  
+**Metodología de Gestión:** Kanban + GitFlow  
 
 ---
 
-## 2. Características IMPLEMENTADAS
+## 1. Arquitectura General del Sistema
 
-Las siguientes funcionalidades están completamente operativas en la versión actual (modo consola):
+**Cold Case** es un videojuego 2D de misterio e investigación policial diseñado bajo una separación estricta entre **lógica de negocio/estructuras de datos (C++17)** y **capa de presentación (Godot 4)**:
 
-### Motor de Juego
-- **`GameEngine`** — Orquestador central que coordina todas las estructuras y administra el estado del juego.
-- **Lógica narrativa** con **7 escenas** conectadas: `[0] Entrada`, `[1] Vestíbulo`, `[2] Biblioteca`, `[3] Estudio`, `[4] Sótano`, `[5] Final Verdad`, `[6] Final Sellado`.
-- **Dos finales posibles** determinados por la colección del ítem `grabacion`.
-
-### Estructuras de Datos Propias (en producción)
-
-| Clase | Tipo | Complejidad Clave |
-|-------|------|-------------------|
-| `InventarioHash` | Tabla Hash (djb2 + encadenamiento) | O(1) amortizado insertar/buscar/eliminar |
-| `ArbolAVL` | Árbol AVL autobalanceado | O(log n) insertar/buscar, 4 rotaciones |
-| `PilaEventos` | Pila LIFO (array circular) | O(1) push/pop/peek |
-| `ColaAlertas` | Cola FIFO (`std::deque`) | O(1) enqueue/dequeue |
-| `GrafoNarrativo` | Grafo dirigido + DFS/Backtracking | O(V+E) pathfinding |
-
-### Tests Unitarios
-- `test_inventario` — 8 casos: inserción, búsqueda O(1), colisiones, eliminación, desbordamiento.
-- `test_avl` — 10 casos: inserción, 4 tipos de rotación, balanceo, búsqueda, inorden.
-- `test_pila_cola` — 6 casos: push/pop LIFO, enqueue/dequeue FIFO, capacidad máxima.
-- `test_grafo` — 7 casos: navegación, condiciones de aristas, DFS, backtracking.
-
-### Build y Compilación
-- `CMakeLists.txt` configurado con targets: `cold_case_consola`, `cold_case` (Qt6), 4 suites de test.
-- Compilación verificada en **Windows** (MinGW / MSVC) y **Linux** (GCC 9+).
-- **Modo consola funcional** al 100%: simulación completa de la partida, lógica de decisiones, inventario y resolución del caso.
+* **Núcleo Lógico (`include/` y `src/`):** Implementa el motor del juego (`GameEngine`) y las estructuras de datos respaldadas por `DeSiGNAR`. Puede compilarse de forma independiente como ejecutable de demostración en consola (`cold_case_consola`) o como biblioteca dinámica compartida (`libcoldcase.dll` / `libcoldcase.so`).
+* **Puente Nativo GDExtension (`src/gdextension/`):** Expone la clase `GameBridge` (heredada de `godot::Node`) mediante `ColdCaseExtension`, permitiendo que las escenas de Godot 4 consulten escenas, decisiones, inventario, pistas e historial directamente desde C++17 sin escribir lógica de juego en GDScript.
+* **Interfaz Gráfica 2D (`godot_project/`):** Contiene la configuración del proyecto (`project.godot`), el manifiesto nativo (`cold_case.gdextension`) y las escenas modulares (`MainScene.tscn`, `InvestigationPanel.tscn`, `InventoryPanel.tscn`, `CluePanel.tscn`).
 
 ---
 
-## 3. Características PLANEADAS
+## 2. Estado de Implementación por Módulo
 
-### Migración a DeSiGNAR
-- Reemplazar implementaciones propias por los templates de **DeSiGNAR** (`https://github.com/R3mmurd/DeSiGNAR`):
-  - `InventarioHash` → `DS::HashMap<string, ObjetoInventario>`
-  - `ArbolAVL` → `DS::AVLTree<Pista>`
-  - `PilaEventos` → `DS::Stack<Evento>`
-  - `ColaAlertas` → `DS::Queue<Evento>`
-  - `GrafoNarrativo` → `DS::Graph<NodoNarrativo>`
-- Integrar DeSiGNAR como submódulo en `third_party/DeSiGNAR`.
-- Wrappers de compatibilidad en `include/structures/*Designar.hpp`.
+Para garantizar transparencia técnica durante la evaluación, se distingue explícitamente entre componentes funcionales verificados y extensiones futuras:
 
-### Capa Visual Godot 4
-- Escenas `.tscn` con **sprites 2D** de personajes y habitaciones.
-- Paneles UI: investigación (`InvestigacionPanel`), inventario (`InventarioPanel`), pistas (`PistasPanel`).
-- Implementados con nodos `Control` / `CanvasLayer`.
-- Escena principal: `main_scene.tscn` → gestiona transiciones.
-
-### GDExtension Bridge
-- Clase `GameBridge` (extiende `godot::Node`) compilada como `.dll` (Windows) / `.so` (Linux).
-- Expone métodos a GDScript: `get_scene_title()`, `take_decision(id)`, `collect_item()`, `get_inventory()`, `get_clues()`, `is_game_over()`.
-- Archivo `gdextension/cold_case.gdextension` para registro en Godot.
-
-### Audio y Animaciones
-- Música de ambiente y efectos de sonido integrados en Godot.
-- `AnimationPlayer` para transiciones de escena y eventos narrativos.
-- Pantalla splash con logo de **Enigma Byte Studio**.
-
-### Build Sistema GDExtension
-- Target CMake `cold_case_gdextension` que genera `.dll`/`.so`.
-- Integración con `godot-cpp` (submódulo en `third_party/godot-cpp`).
-- Soporte multiplataforma vía `SConstruct` o `CMakeLists.txt` extendido.
+| Módulo / Característica | Estado | Descripción Técnica |
+| :--- | :--- | :--- |
+| **Motor Central (`GameEngine`)** | **[IMPLEMENTADO]** | Orquesta narrativa, inventario, expediente de pistas, historial de acciones y cola de alertas en C++17. |
+| **Inventario (`InventarioHash`)** | **[IMPLEMENTADO]** | Tabla Hash abierta con encadenamiento separado (`Designar::SeparateChainingHashTable`) y función `super_fast_hash` para búsqueda $O(1)$ promedio. |
+| **Expediente de Pistas (`ArbolAVL`)** | **[IMPLEMENTADO]** | Árbol binario de búsqueda autobalanceado (`Designar::AvlTree`) ordenado por ID de pista para inserción, búsqueda y recorrido inorden $O(\log n)$. |
+| **Historial de Acciones (`PilaEventos`)** | **[IMPLEMENTADO]** | Pila LIFO (`Designar::DynStack`) que registra cronológicamente las acciones de la investigadora. |
+| **Cola de Alertas (`ColaAlertas`)** | **[IMPLEMENTADO]** | Cola FIFO (`Designar::DynQueue`) para despachar notificaciones y descubrimientos en orden de llegada. |
+| **Gestor de Escenas (`GestorEscenas`)** | **[IMPLEMENTADO]** | Tabla Hash (`Designar::SeparateChainingHashTable`) indexada por ID de escena con lista doblemente enlazada (`Designar::DLList`) de decisiones condicionadas por objetos. |
+| **Puente GDExtension (`GameBridge`)** | **[IMPLEMENTADO]** | Clase nativa registrada en `ClassDB` de Godot 4 y compilada en `godot_project/bin/libcoldcase.dll`. |
+| **Escenas Base en Godot 4** | **[IMPLEMENTADO]** | Escena principal `MainScene.tscn` con nodo `GameBridge` y paneles UI (`InvestigationPanel`, `InventoryPanel`, `CluePanel`). |
+| **Pruebas Unitarias Automatizadas** | **[IMPLEMENTADO]** | Suites `test_inventario`, `test_avl` y `test_pila_cola` (60 aserciones aprobadas, 0 fallos) más demo integral `cold_case_consola`. |
+| **Arte 2D, Sprites y Audio Ambiental** | **[PLANIFICADO]** | Incorporación de fondos ilustrados de la mansión Blackwood, retratos de personajes y efectos sonoros en Godot 4. |
+| **Guardado/Carga Persistente en Disco** | **[PLANIFICADO]** | Serialización del estado de `GameEngine` a archivo externo para continuar partidas entre sesiones. |
+| **Capítulos Adicionales del Caso** | **[PLANIFICADO]** | Expansión de escenas y pistas más allá del caso piloto *La Mansión Blackwood*. |
 
 ---
 
-## 4. Flujo de Datos
+## 3. Estructuras de Datos con `DeSiGNAR`
 
-El flujo de datos en tiempo de ejecución sigue una dirección clara: de la UI de Godot hacia las estructuras de DeSiGNAR, pasando por el puente y el motor.
+Todas las estructuras de datos del proyecto están respaldadas por la librería `DeSiGNAR` (integrada como submódulo Git en `third_party/DeSiGNAR` y enlazada estáticamente mediante CMake):
 
-```mermaid
-sequenceDiagram
-    participant U as 👤 Jugador
-    participant G as 🎮 Godot UI
-    participant B as 🔗 GameBridge
-    participant E as ⚙️ GameEngine
-    participant D as 📦 DeSiGNAR
-
-    U->>G: Presiona botón "Recoger objeto"
-    G->>B: collect_item("llave_b", "Llave Biblioteca", "Abre la biblioteca")
-    B->>E: engine.collectItem(key, name, desc)
-    E->>D: DS::HashMap::insert(key, ObjetoInventario)
-    D-->>E: OK
-    E->>D: DS::Stack::push(Evento{"recogio_llave_b"})
-    D-->>E: OK
-    E-->>B: true (éxito)
-    B-->>G: true
-    G-->>U: Panel inventario actualizado
-
-    U->>G: Selecciona decisión "Ir a Biblioteca"
-    G->>B: take_decision(2)
-    B->>E: engine.takeDecision(2)
-    E->>D: DS::Graph::moverA(nodo_biblioteca)
-    D-->>E: NodoNarrativo actualizado
-    E->>D: DS::AVLTree::insert(Pista nueva)
-    D-->>E: OK
-    E-->>B: NodoNarrativo actualizado
-    B-->>G: Título y descripción de nueva escena
-    G-->>U: Escena "Biblioteca" renderizada
-```
+1. **Tabla Hash (`InventarioHash` y `GestorEscenas`):**
+   * **Clase `DeSiGNAR`:** `Designar::SeparateChainingHashTable<Key, Cmp>` junto con `Designar::super_fast_hash` (`<chainedhash.hpp>`, `<hash.hpp>`).
+   * **Uso en el juego:** En `InventarioHash` permite verificar en tiempo constante $O(1)$ si Sofía Ramos posee un objeto clave (como `llave_b` o `grabacion_eleanor`) antes de habilitar una acción. En `GestorEscenas` almacena los registros de cada escena indexados por su `id`, acompañados de una lista doblemente enlazada `Designar::DLList<AristaDecision>` (`<list.hpp>`) con las opciones disponibles desde esa ubicación.
+2. **Árbol AVL (`ArbolAVL`):**
+   * **Clase `DeSiGNAR`:** `Designar::AvlTree<Pista, CmpPista>` (`<avltree.hpp>`).
+   * **Uso en el juego:** Mantiene el expediente de pistas siempre ordenado ascendentemente por identificador único sin degradarse ante inserciones secuenciales, permitiendo recorridos ordenados inorden y filtrado por categoría (`Documental`, `Fisica`, `Testimonial`, `Digital`).
+3. **Pila LIFO (`PilaEventos`):**
+   * **Clase `DeSiGNAR`:** `Designar::DynStack<Evento>` (`<stack.hpp>`).
+   * **Uso en el juego:** Registra la bitácora de eventos y decisiones tomadas por la jugadora, permitiendo consultar los últimos $N$ movimientos realizados desde el tope de la pila.
+4. **Cola FIFO (`ColaAlertas`):**
+   * **Clase `DeSiGNAR`:** `Designar::DynQueue<Evento>` (`<queue.hpp>`).
+   * **Uso en el juego:** Gestiona la cola de mensajes y descubrimientos pendientes para mostrarlos al jugador estrictamente en el orden en que ocurrieron.
 
 ---
 
-## 5. Tablero Kanban (Trello)
+## 4. Integración con Godot 4 (GDExtension)
 
-| 📌 Notes | 📋 To-Do | 🔄 InProgress | 🧪 Testing | ✅ Done |
-|----------|----------|---------------|------------|---------|
-| Animaciones y transiciones Godot | Escenas Godot (.tscn) — sprites 2D | Migración estructuras → DeSiGNAR | CMakeLists.txt actualizado (DeSiGNAR + godot-cpp) | ✅ Modo consola funcional |
-| Audio ambiente + SFX | GDExtension bridge (GameBridge .dll/.so) | | | ✅ GameEngine (orquestador) |
-| Pantalla splash Enigma Byte Studio | Paneles UI: investigación, inventario, pistas | | | ✅ InventarioHash (tabla hash djb2) |
-| Optimización DeSiGNAR vs. propias | Build sistema: SConstruct / CMake para .dll | | | ✅ ArbolAVL (4 rotaciones) |
-| | Pantalla de créditos | | | ✅ PilaEventos (LIFO) |
-| | | | | ✅ ColaAlertas (FIFO) |
-| | | | | ✅ GrafoNarrativo (DFS + Backtracking) |
-| | | | | ✅ Lógica narrativa 7 escenas + 2 finales |
-| | | | | ✅ test_inventario (8 casos) |
-| | | | | ✅ test_avl (10 casos) |
-| | | | | ✅ test_pila_cola (6 casos) |
-| | | | | ✅ test_grafo (7 casos) |
+Para cumplir la restricción de **cero lógica en GDScript**, se construyó una extensión nativa en C++17:
+
+* **`ColdCaseExtension.cpp`:** Registra el módulo ante `GDExtensionInterfaceGetProcAddress` en el nivel de inicialización `MODULE_INITIALIZATION_LEVEL_SCENE` y da de alta la clase `GameBridge` mediante `GDREGISTER_CLASS(GameBridge)`.
+* **`GameBridge.hpp` / `GameBridge.cpp`:** Encapsula una instancia privada de `GameEngine` y expone métodos enlazados con `ClassDB::bind_method`:
+  * `get_scene_title()` y `get_scene_description()`
+  * `get_decisions()` y `take_decision(id)`
+  * `collect_item(key, name, desc)` y `get_inventory()`
+  * `get_clues()`, `get_recent_history(n)` e `is_game_over()`
+* **Configuración (`godot_project/cold_case.gdextension`):** Vincula la biblioteca compilada (`res://bin/libcoldcase.dll` en Windows 64-bit y `res://bin/libcoldcase.so` en Linux 64-bit) con `entry_symbol = "coldcase_library_init"`.
 
 ---
 
-## 6. GitFlow
+## 5. Metodología de Desarrollo: Kanban + GitFlow
 
-El proyecto sigue el modelo **GitFlow** con las siguientes ramas:
+El desarrollo se organizó combinando un **tablero Kanban** de flujo continuo con el modelo de ramificación **GitFlow**:
 
-| Rama | Tipo | Propósito |
-|------|------|-----------|
-| `main` | Producción | Código estable y probado. Solo recibe merges desde `release/*` o `hotfix/*`. |
-| `develop` | Integración | Rama base de desarrollo. Todas las features se fusionan aquí antes de release. |
-| `feature/kanban-gitflow-setup` | Feature | Configuración inicial del repositorio: GitFlow, Trello, estructura de proyecto. |
-| `feature/designar-migration` | Feature | Migración de estructuras propias a templates de DeSiGNAR. |
-| `feature/godot-scenes` | Feature | Creación de escenas `.tscn`, sprites 2D y paneles UI en Godot 4. |
-| `feature/gdextension-bridge` | Feature | Implementación de `GameBridge` como GDExtension (`.dll`/`.so`). |
-| `feature/cmake-designar-godot` | Feature | Actualización de `CMakeLists.txt` para incluir DeSiGNAR + godot-cpp. |
-| `feature/game-logic-cpp` | Feature | Lógica de juego en C++: GameEngine, escenas, decisiones y finales. |
-| `feature/technical-doc` | Feature | Documentación técnica del proyecto (este documento). |
-| `feature/readme-final` | Feature | README.md final con stack actualizado y guías de compilación. |
+### 5.1 Flujo del Tablero Kanban
+El ciclo de vida de cada tarea se gestionó a través de cinco columnas explícitas:
 
-### Convención de commits
+1. **Notes:** Ideas de diseño narrativo, requisitos de evaluación y arquitectura GDExtension.
+2. **To-Do:** Tareas priorizadas y listas para ejecución (migración de estructuras, configuración de CMake, montaje de escenas, redacción técnica).
+3. **InProgress:** Tareas en desarrollo activo sobre una rama `feature/*` aislada.
+4. **Testing:** Validación mediante compilación cruzada CMake, ejecución de suites unitarias (`test_inventario`, `test_avl`, `test_pila_cola`) y verificación de carga de `libcoldcase.dll` en Godot 4.
+5. **Done:** Tareas aprobadas e integradas mediante merge `--no-ff` hacia `develop`.
 
-```
-feat:  nueva funcionalidad
-fix:   corrección de bug
-docs:  documentación únicamente
-test:  adición o modificación de tests
-refactor: refactorización sin cambio funcional
-chore: tareas de build, CI, dependencias
-```
+### 5.2 Trazabilidad entre Kanban y Ramas GitFlow
 
----
-
-## 7. Stack Tecnológico
-
-| Componente | Tecnología | Versión Mínima | Rol en el Proyecto |
-|------------|-----------|----------------|-------------------|
-| **Lenguaje Principal** | C++17 | GCC 9+ / Clang 10+ / MSVC 2019+ | Motor lógico, estructuras, GameEngine |
-| **Estructuras de Datos** | [DeSiGNAR](https://github.com/R3mmurd/DeSiGNAR) | Última estable | Templates DS::HashMap, AVLTree, Stack, Queue, Graph |
-| **Motor Gráfico** | Godot 4.x | 4.0+ | Renderizado 2D, UI, audio, animaciones |
-| **GDExtension API** | godot-cpp | 4.x (submódulo) | Bridge C++ ↔ Godot (GameBridge.dll/.so) |
-| **Build System** | CMake | 3.16+ | Compilación multiplataforma |
-| **Control de Versiones** | Git + GitHub | — | Gestión de código, GitFlow, PRs |
-| **Testing** | Executables + assert | C++17 STL | 4 suites de prueba unitaria |
-| **GUI (legado)** | Qt6 Core + Widgets | 6.0+ | UI alternativa (en desuso, reemplazada por Godot) |
-
----
-
-*Documento generado por Enigma Byte Studio — Programación 3 | Noviembre 2026*
+| Rama GitFlow | Propósito Técnico | Estado Kanban |
+| :--- | :--- | :--- |
+| `main` | Versión estable de entrega del proyecto. | **Done** |
+| `develop` | Rama principal de integración continua donde convergen todas las funcionalidades probadas. | **Done** |
+| `feature/cmake-designar-godot` | Configuración unificada de `CMakeLists.txt` y registro de submódulos `DeSiGNAR` y `godot-cpp`. | **Done** |
+| `feature/designar-migration` | Sustitución de estructuras manuales por contenedores oficiales de `DeSiGNAR` (`SeparateChainingHashTable`, `AvlTree`, `DynStack`, `DynQueue`). | **Done** |
+| `feature/godot-scenes` | Creación de `GameBridge` (GDExtension), escenas base de Godot 4 y sustitución de grafos por `GestorEscenas` (Tabla Hash + `DLList`). | **Done** |
+| `feature/technical-doc` | Elaboración de `docs/DOCUMENTO_TECNICO.md` con estado de módulos, arquitectura y trazabilidad Kanban. | **Done** |
+| `feature/readme-final` | Actualización de `README.md` con guía de instalación, compilación y estructura del repositorio. | **Done** |
