@@ -1,0 +1,24 @@
+﻿[gd_scene load_steps=5 format=3 uid="uid://main_scene"]
+
+[node name="MainScene" type="Node2D"]
+
+[node name="UILayer" type="CanvasLayer" parent="."]
+
+[node name="UI" type="Control" parent="UILayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MainVBox" type="VBoxContainer" parent="UILayer/UI"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="GameBridge" type="Node" parent="."]
+script = ExtResource("res://bin/libcoldcase.gdextension")

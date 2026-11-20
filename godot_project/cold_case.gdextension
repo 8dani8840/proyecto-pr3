@@ -1,0 +1,13 @@
+﻿[configuration]
+entry_symbol = "coldcase_library_init"
+compatibility_minimum = "4.1"
+
+[libraries]
+windows.debug.x86_64 = "res://bin/libcoldcase.dll"
+windows.release.x86_64 = "res://bin/libcoldcase.dll"
+linux.debug.x86_64 = "res://bin/libcoldcase.so"
+linux.release.x86_64 = "res://bin/libcoldcase.so"
+
+[dependencies]
+windows.debug.x86_64 = {}
+windows.release.x86_64 = {}
