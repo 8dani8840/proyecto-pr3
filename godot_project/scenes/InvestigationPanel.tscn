@@ -1,0 +1,37 @@
+﻿[gd_scene load_steps=4 format=3 uid="uid://investigation_panel"]
+
+[node name="InvestigationPanel" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="SceneTitle" type="Label" parent="VBox"]
+layout_mode = 2
+text = "Escena actual"
+theme_override_font_sizes/font_size = 24
+
+[node name="SceneDescription" type="Label" parent="VBox"]
+layout_mode = 2
+text = "Descripción narrativa de la escena..."
+autowrap_mode = 3
+
+[node name="CluesLabel" type="Label" parent="VBox"]
+layout_mode = 2
+text = "Pistas encontradas:"
+theme_override_font_sizes/font_size = 16
+
+[node name="CluesList" type="ItemList" parent="VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 150)
