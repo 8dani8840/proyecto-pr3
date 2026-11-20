@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.20)
+﻿cmake_minimum_required(VERSION 3.20)
 project(ColdCase VERSION 1.0 LANGUAGES CXX)
 
 # ============================================================
@@ -58,7 +58,7 @@ set(SOURCES_ESTRUCTURAS
     src/structures/ArbolAVL.cpp
     src/structures/PilaEventos.cpp
     src/structures/ColaAlertas.cpp
-    src/structures/GrafoNarrativo.cpp
+    src/structures/GestorEscenas.cpp
 )
 
 set(SOURCES_GAME
@@ -95,7 +95,7 @@ if(BUILD_TESTS)
     add_test_target(test_inventario  tests/test_inventario.cpp)
     add_test_target(test_avl         tests/test_avl.cpp)
     add_test_target(test_pila_cola   tests/test_pila_cola.cpp)
-    add_test_target(test_grafo       tests/test_grafo.cpp)
+
 endif()
 
 # ============================================================

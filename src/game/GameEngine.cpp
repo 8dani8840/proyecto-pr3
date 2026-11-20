@@ -1,4 +1,4 @@
-#include "game/GameEngine.hpp"
+﻿#include "game/GameEngine.hpp"
 #include <iostream>
 
 // ============================================================
@@ -222,5 +222,5 @@ void GameEngine::mostrarEstadoCompleto() const {
     expediente.mostrarExpediente();
     historial.mostrarHistorial();
     alertas.mostrarAlertas();
-    narrativa.mostrarGrafo();
+    narrativa.mostrarEscenas();
 }
