@@ -35,3 +35,4 @@ qrc_*.cpp
 # OS specific
 .DS_Store
 Thumbs.db
+godot_project/.godot/
